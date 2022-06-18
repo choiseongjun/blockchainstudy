@@ -95,6 +95,7 @@ func jsonContentTypeMiddleware(next http.Handler) http.Handler {
 }
 func Start(aPort int) {
 	//handler := http.NewServeMux()
+
 	port = fmt.Sprintf(":%d", aPort)
 	router := mux.NewRouter()
 	router.Use(jsonContentTypeMiddleware)
