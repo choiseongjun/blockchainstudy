@@ -1,8 +1,13 @@
 package blockchain
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"encoding/gob"
+	"errors"
 	"fmt"
+	"golangblock/db"
+	"golangblock/utils"
 )
 
 type Block struct {
@@ -21,5 +26,33 @@ func createBlock(data string, prevHash string, height int) *Block {
 	}
 	payload := block.Data + block.PrevHash + fmt.Sprint(block.Height)
 	block.Hash = fmt.Sprintf("%x", sha256.Sum256([]byte(payload)))
+	block.persist()
 	return block
+}
+func (b *Block) toBytes() []byte {
+	var blockBuffer bytes.Buffer
+	encoder := gob.NewEncoder(&blockBuffer)
+	utils.HandleErr(encoder.Encode(b))
+	return blockBuffer.Bytes()
+}
+
+func (b *Block) persist() {
+	//db.SaveBlock(b.Hash, b.toBytes())
+	db.SaveBlock(b.Hash, utils.ToBytes(b))
+}
+
+var ErrNotFound = errors.New("block not found")
+
+func (b *Block) restore(data []byte) {
+	utils.FromBytes(b, data)
+}
+
+func FindBlock(hash string) (*Block, error) {
+	blockBytes := db.Block(hash)
+	if blockBytes == nil {
+		return nil, ErrNotFound
+	}
+	block := &Block{}
+	block.restore(blockBytes)
+	return block, nil
 }
